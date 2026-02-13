@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Be My Valentine?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #fff0f3;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cursive {
+            font-family: 'Dancing Script', cursive;
+        }
+
+        #noBtn {
+            transition: all 0.15s ease-out;
+            z-index: 50;
+            touch-action: none; /* Prevents scrolling when trying to tap the moving button */
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .floating-heart {
+            position: fixed;
+            color: #ff4d6d;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 10;
+            animation: float 4s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MAIN QUESTION UI -->
+    <div id="mainContainer" class="text-center p-6 md:p-12 bg-white/60 backdrop-blur-md rounded-[2rem] md:rounded-[3.5rem] shadow-2xl border-4 border-pink-200 z-20 w-[90%] max-w-lg md:max-w-2xl">
+        <h1 id="questionText" class="text-3xl sm:text-4xl md:text-6xl text-pink-600 font-bold mb-8 md:mb-16 leading-tight">
+            Will you be my valentine? 🌹
+        </h1>
+        
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-6 md:gap-12 min-h-[120px] relative">
+            <button id="yesBtn" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 md:px-14 rounded-full text-xl md:text-3xl transform transition hover:scale-110 active:scale-95 shadow-lg">
+                Yes
+            </button>
+            
+            <button id="noBtn" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-10 md:px-14 rounded-full text-xl md:text-3xl shadow-lg">
+                No
+            </button>
+        </div>
+    </div>
+
+    <!-- ANGRY CAT OVERLAY -->
+    <div id="catOverlay" class="fixed inset-0 bg-black/95 z-[100] hidden flex-col items-center justify-center text-center p-6">
+        <div class="max-w-sm md:max-w-md w-full">
+            <img src="/cat-gun.png" 
+                 alt="Angry Cat" 
+                 class="w-full h-auto rounded-3xl border-4 border-red-600 mb-8 shadow-[0_0_60px_rgba(220,38,38,0.6)]">
+            <h2 class="text-red-600 text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter italic animate-pulse">
+                STOP MESSING WITH ME! 🔫
+            </h2>
+        </div>
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div id="successScreen" class="fixed inset-0 bg-pink-50 z-[200] hidden flex-col items-center justify-center text-center p-4 md:p-8 overflow-y-auto">
+        <div class="max-w-xl w-full bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl border-b-[12px] border-pink-200 fade-in my-auto">
+            <!-- <img src="https://media.tenor.com/Xp9pD1YV4pMAAAAM/cat-love.gif" alt="Happy Cat" class="w-32 h-32 md:w-48 md:h-48 mx-auto mb-8 rounded-full border-4 border-pink-300 object-cover shadow-inner"> -->
+            
+            <h1 class="cursive text-4xl md:text-6xl text-pink-600 mb-8">Yay! ❤️</h1>
+            
+            <div class="text-pink-800 text-lg md:text-2xl leading-relaxed italic space-y-4 md:space-y-6">
+                <p>Roses are red, the sky is blue,</p>
+                <p>I’m so lucky to have someone like you.</p>
+                <p>Through every laugh and every smile,</p>
+                <p>You make every single moment worthwhile.</p>
+                <div class="h-px bg-pink-100 w-24 mx-auto my-4"></div>
+                <p class="font-bold not-italic text-pink-500 uppercase tracking-widest text-sm md:text-lg">I'm so happy you said YES!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const noBtn = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        const catOverlay = document.getElementById('catOverlay');
+        const successScreen = document.getElementById('successScreen');
+        const mainContainer = document.getElementById('mainContainer');
+
+        let hoverCount = 0;
+        let isCatShowing = false;
+
+        /**
+         * Moves the "No" button to a random position within the center region
+         * (middle 60% of the screen) to avoid corners and edges.
+         */
+        const moveButton = () => {
+            if (isCatShowing) return;
+            
+            const btnWidth = noBtn.offsetWidth;
+            const btnHeight = noBtn.offsetHeight;
+            
+            // Define the center region (middle 60% of the screen)
+            // Stays away from the 20% outer margins on all sides
+            const horizontalMargin = window.innerWidth * 0.2;
+            const verticalMargin = window.innerHeight * 0.2;
+
+            const minX = horizontalMargin;
+            const maxX = window.innerWidth - horizontalMargin - btnWidth;
+            const minY = verticalMargin;
+            const maxY = window.innerHeight - verticalMargin - btnHeight;
+
+            // Ensure valid ranges for small viewports
+            const safeMinX = Math.max(10, minX);
+            const safeMaxX = Math.max(safeMinX, maxX);
+            const safeMinY = Math.max(10, minY);
+            const safeMaxY = Math.max(safeMinY, maxY);
+
+            const randomX = Math.floor(Math.random() * (safeMaxX - safeMinX + 1)) + safeMinX;
+            const randomY = Math.floor(Math.random() * (safeMaxY - safeMinY + 1)) + safeMinY;
+            
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = `${randomX}px`;
+            noBtn.style.top = `${randomY}px`;
+            noBtn.style.margin = '0';
+        };
+
+        // Hover/Touch Logic
+        const handleEscape = () => {
+            hoverCount++;
+            if (hoverCount >= 4) {
+                showAngryCat();
+                hoverCount = 0;
+            } else {
+                moveButton();
+            }
+        };
+
+        noBtn.addEventListener('mouseover', handleEscape);
+        noBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            handleEscape();
+        });
+
+        noBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleEscape();
+        });
+
+        function showAngryCat() {
+            isCatShowing = true;
+            catOverlay.classList.remove('hidden');
+            catOverlay.classList.add('flex');
+            
+            setTimeout(() => {
+                catOverlay.classList.add('hidden');
+                catOverlay.classList.remove('flex');
+                
+                // Reset button to initial state
+                noBtn.style.position = 'static';
+                noBtn.style.left = 'auto';
+                noBtn.style.top = 'auto';
+                
+                isCatShowing = false;
+            }, 4000);
+        }
+
+        yesBtn.addEventListener('click', () => {
+            successScreen.classList.remove('hidden');
+            successScreen.classList.add('flex');
+            startHearts();
+        });
+
+        function startHearts() {
+            const heartInterval = setInterval(() => {
+                if (successScreen.classList.contains('hidden')) {
+                    clearInterval(heartInterval);
+                    return;
+                }
+                const heart = document.createElement('div');
+                heart.innerHTML = '❤️';
+                heart.classList.add('floating-heart');
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.fontSize = (Math.random() * 20 + 15) + 'px';
+                heart.style.animationDuration = (Math.random() * 2 + 3) + 's';
+                document.body.appendChild(heart);
+                
+                setTimeout(() => heart.remove(), 5000);
+            }, 400);
+        }
+
+        window.addEventListener('resize', () => {
+            if (noBtn.style.position === 'fixed') {
+                moveButton();
+            }
+        });
+    </script>
+</body>
+</html>
